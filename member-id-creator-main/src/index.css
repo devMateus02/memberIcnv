@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Design System - Church Member Digital ID Registration
+   Inspired by modern fintech apps: clean, trustworthy, premium */
+
+@layer base {
+  :root {
+    /* Core brand colors - Deep Teal for trust & modernity */
+    --background: 180 20% 99%;
+    --foreground: 200 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 25% 10%;
+
+    /* Primary - Deep Teal */
+    --primary: 174 62% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Warm Gold accent */
+    --secondary: 40 80% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted surfaces */
+    --muted: 180 15% 95%;
+    --muted-foreground: 200 10% 45%;
+
+    /* Accent - Light teal */
+    --accent: 174 45% 92%;
+    --accent-foreground: 174 62% 25%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success state */
+    --success: 152 69% 40%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning state */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 180 15% 90%;
+    --input: 180 15% 90%;
+    --ring: 174 62% 35%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(174 62% 35%) 0%, hsl(174 55% 45%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(174 45% 92%) 0%, hsl(180 20% 99%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(152 69% 40%) 0%, hsl(174 62% 35%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(40 80% 55%) 0%, hsl(35 85% 60%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(200 25% 10% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(200 25% 10% / 0.1), 0 2px 4px -2px hsl(200 25% 10% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(200 25% 10% / 0.1), 0 4px 6px -4px hsl(200 25% 10% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(200 25% 10% / 0.1), 0 8px 10px -6px hsl(200 25% 10% / 0.1);
+    --shadow-glow: 0 0 40px hsl(174 62% 35% / 0.25);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 200 25% 8%;
+    --foreground: 180 15% 95%;
+
+    --card: 200 20% 12%;
+    --card-foreground: 180 15% 95%;
+
+    --popover: 200 20% 12%;
+    --popover-foreground: 180 15% 95%;
+
+    --primary: 174 55% 45%;
+    --primary-foreground: 200 25% 8%;
+
+    --secondary: 40 75% 50%;
+    --secondary-foreground: 200 25% 8%;
+
+    --muted: 200 15% 18%;
+    --muted-foreground: 180 10% 60%;
+
+    --accent: 174 40% 20%;
+    --accent-foreground: 174 55% 75%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 45%;
+    --success-foreground: 200 25% 8%;
+
+    --border: 200 15% 20%;
+    --input: 200 15% 20%;
+    --ring: 174 55% 45%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .form-step-enter {
+    @apply opacity-0 translate-x-8;
+  }
+  
+  .form-step-active {
+    @apply opacity-100 translate-x-0;
+  }
+  
+  .form-step-exit {
+    @apply opacity-0 -translate-x-8;
+  }
+}
