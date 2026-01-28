@@ -1,20 +1,19 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import Webcam from 'react-webcam';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { FormWrapper } from '../FormWrapper';
-import { RegistrationData } from '@/types/registration';
+import { useState, useRef, useCallback, useEffect } from "react";
+import Webcam from "react-webcam";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { FormWrapper } from "../FormWrapper";
+import { RegistrationData } from "@/types/registration";
 import {
   Camera,
   RotateCcw,
   Check,
   AlertCircle,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { FaceDetection } from '@mediapipe/face_detection';
-import { Camera as MPCamera } from '@mediapipe/camera_utils';
-import { uploadSelfie } from '@/api/users.api';
+import { uploadSelfie } from "@/api/users.api";
+
 interface Props {
   data: RegistrationData;
   onUpdate: (updates: Partial<RegistrationData>) => void;
@@ -23,8 +22,8 @@ interface Props {
   currentStep: number;
 }
 
-type CameraStatus = 'loading' | 'ready' | 'error' | 'captured';
-type FaceStatus = 'no_face' | 'too_far' | 'not_centered' | 'ready';
+type CameraStatus = "loading" | "ready" | "error" | "captured";
+type FaceStatus = "no_face" | "too_far" | "not_centered" | "ready";
 
 export const StepSelfie = ({
   data,
@@ -34,130 +33,142 @@ export const StepSelfie = ({
   currentStep,
 }: Props) => {
   const webcamRef = useRef<Webcam>(null);
-  const mpCameraRef = useRef<MPCamera | null>(null);
 
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('loading');
-  const [capturedImage, setCapturedImage] = useState<string | null>(
-   
-  );
-  const [faceStatus, setFaceStatus] = useState<FaceStatus>('no_face');
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("loading");
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [faceStatus, setFaceStatus] = useState<FaceStatus>("no_face");
   const [canCapture, setCanCapture] = useState(false);
 
   const handleUserMedia = useCallback(() => {
-    setCameraStatus('ready');
+    setCameraStatus("ready");
   }, []);
 
   const handleUserMediaError = useCallback(() => {
-    setCameraStatus('error');
+    setCameraStatus("error");
   }, []);
 
-  /* 🔥 IA LOCAL – MediaPipe */
+  /* 🔥 MediaPipe Face Detection – IMPORT CORRETO */
   useEffect(() => {
-    if (cameraStatus !== 'ready') return;
+    if (cameraStatus !== "ready") return;
     if (!webcamRef.current?.video) return;
 
-    const video = webcamRef.current.video;
+    let detector: any;
+    let rafId: number;
+    let cancelled = false;
 
-    const faceDetection = new FaceDetection({
-      locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`,
-    });
+    const startDetection = async () => {
+      const video = webcamRef.current!.video!;
 
-    faceDetection.setOptions({
-      model: 'short',
-      minDetectionConfidence: 0.6,
-    });
+      // ✅ IMPORT DINÂMICO DO ARQUIVO CERTO
+      const module = await import(
+        "@mediapipe/face_detection/face_detection.js"
+      );
 
-    faceDetection.onResults((results) => {
-      if (!results.detections || results.detections.length !== 1) {
-        setFaceStatus('no_face');
-        setCanCapture(false);
-        return;
-      }
+      const FaceDetection = module.FaceDetection;
 
-      const box = results.detections[0].boundingBox;
-      if (!box) return;
+      detector = new FaceDetection({
+        locateFile: (file: string) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`,
+      });
 
-      const { width, height, xCenter, yCenter } = box;
+      detector.setOptions({
+        model: "short",
+        minDetectionConfidence: 0.6,
+      });
 
-      // 🔎 Distância do rosto
-      if (width < 0.25 || height < 0.35) {
-        setFaceStatus('too_far');
-        setCanCapture(false);
-        return;
-      }
+      detector.onResults((results: any) => {
+        if (!results.detections || results.detections.length !== 1) {
+          setFaceStatus("no_face");
+          setCanCapture(false);
+          return;
+        }
 
-      // 🎯 Centralização
-      if (
-        xCenter < 0.4 ||
-        xCenter > 0.6 ||
-        yCenter < 0.35 ||
-        yCenter > 0.65
-      ) {
-        setFaceStatus('not_centered');
-        setCanCapture(false);
-        return;
-      }
+        const box = results.detections[0].boundingBox;
+        if (!box) return;
 
-      setFaceStatus('ready');
-      setCanCapture(true);
-    });
+        const { width, height, xCenter, yCenter } = box;
 
-    mpCameraRef.current = new MPCamera(video, {
-      onFrame: async () => {
-        await faceDetection.send({ image: video });
-      },
-      width: 480,
-      height: 640,
-    });
+        if (width < 0.25 || height < 0.35) {
+          setFaceStatus("too_far");
+          setCanCapture(false);
+          return;
+        }
 
-    mpCameraRef.current.start();
+        if (
+          xCenter < 0.4 ||
+          xCenter > 0.6 ||
+          yCenter < 0.35 ||
+          yCenter > 0.65
+        ) {
+          setFaceStatus("not_centered");
+          setCanCapture(false);
+          return;
+        }
+
+        setFaceStatus("ready");
+        setCanCapture(true);
+      });
+
+      const loop = async () => {
+        if (cancelled) return;
+        if (video.readyState === 4) {
+          await detector.send({ image: video });
+        }
+        rafId = requestAnimationFrame(loop);
+      };
+
+      loop();
+    };
+
+    startDetection();
 
     return () => {
-      mpCameraRef.current?.stop();
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      if (detector) detector.close();
     };
   }, [cameraStatus]);
 
   const capture = useCallback(() => {
     if (!canCapture) return;
-    const imageSrc = webcamRef.current?.getScreenshot();
-    if (imageSrc) {
-      setCapturedImage(imageSrc);
-      setCameraStatus('captured');
+
+    const image = webcamRef.current?.getScreenshot();
+    if (image) {
+      setCapturedImage(image);
+      setCameraStatus("captured");
     }
   }, [canCapture]);
 
   const retake = useCallback(() => {
     setCapturedImage(null);
-    setCameraStatus('ready');
+    setCameraStatus("ready");
   }, []);
 
-const confirm = useCallback(async () => {
-  if (!capturedImage) return;
+  const confirm = useCallback(async () => {
+    if (!capturedImage) return;
 
-  try {
-    const selfieUrl = await uploadSelfie(capturedImage);
-    onUpdate({ selfie_url: selfieUrl });
-    onNext();
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao enviar selfie");
-  }
-}, [capturedImage, onUpdate, onNext]);
-
+    try {
+      const selfieUrl = await uploadSelfie(capturedImage);
+      onUpdate({ selfie_url: selfieUrl });
+      onNext();
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao enviar selfie");
+    }
+  }, [capturedImage, onUpdate, onNext]);
 
   const getFaceStatusMessage = () => {
     switch (faceStatus) {
-      case 'no_face':
-        return { text: 'Posicione seu rosto na câmera', color: 'text-warning' };
-      case 'too_far':
-        return { text: 'Aproxime o rosto', color: 'text-warning' };
-      case 'not_centered':
-        return { text: 'Centralize o rosto', color: 'text-warning' };
-      case 'ready':
+      case "no_face":
+        return { text: "Posicione seu rosto na câmera", color: "text-warning" };
+      case "too_far":
+        return { text: "Aproxime o rosto", color: "text-warning" };
+      case "not_centered":
+        return { text: "Centralize o rosto", color: "text-warning" };
+      case "ready":
         return {
-          text: 'Rosto alinhado – pronto para capturar',
-          color: 'text-success',
+          text: "Rosto alinhado – pronto para capturar",
+          color: "text-success",
         };
     }
   };
@@ -174,39 +185,40 @@ const confirm = useCallback(async () => {
     >
       <div className="space-y-6">
         <div className="relative aspect-[3/4] max-w-sm mx-auto overflow-hidden rounded-2xl bg-muted">
-          <AnimatePresence mode="wait">
-            {cameraStatus === 'loading' && (
-              <motion.div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+          <AnimatePresence>
+            {cameraStatus === "loading" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-10 h-10 animate-spin" />
                 <p>Iniciando câmera...</p>
-              </motion.div>
+              </div>
             )}
 
-            {cameraStatus === 'error' && (
-              <motion.div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+            {cameraStatus === "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <AlertCircle className="w-12 h-12 text-destructive" />
                 <p>Câmera não disponível</p>
-              </motion.div>
+              </div>
             )}
 
-            {(cameraStatus === 'ready' || cameraStatus === 'loading') &&
+            {(cameraStatus === "ready" || cameraStatus === "loading") &&
               !capturedImage && (
                 <Webcam
                   ref={webcamRef}
                   audio={false}
                   screenshotFormat="image/jpeg"
+                  mirrored
                   videoConstraints={{
-                    facingMode: 'user',
-                    aspectRatio: 3 / 4,
+                    facingMode: "user",
+                    width: 480,
+                    height: 640,
                   }}
                   onUserMedia={handleUserMedia}
                   onUserMediaError={handleUserMediaError}
                   className="absolute inset-0 w-full h-full object-cover"
-                  mirrored
                 />
               )}
 
-            {cameraStatus === 'captured' && capturedImage && (
+            {cameraStatus === "captured" && capturedImage && (
               <img
                 src={capturedImage}
                 alt="Selfie"
@@ -216,13 +228,13 @@ const confirm = useCallback(async () => {
           </AnimatePresence>
         </div>
 
-        {cameraStatus === 'ready' && (
+        {cameraStatus === "ready" && (
           <p className={`text-center font-medium ${statusMessage.color}`}>
             {statusMessage.text}
           </p>
         )}
 
-        {cameraStatus === 'ready' && (
+        {cameraStatus === "ready" && (
           <Button
             variant="hero"
             size="lg"
@@ -235,7 +247,7 @@ const confirm = useCallback(async () => {
           </Button>
         )}
 
-        {cameraStatus === 'captured' && capturedImage && (
+        {cameraStatus === "captured" && capturedImage && (
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1" onClick={retake}>
               <RotateCcw className="w-5 h-5 mr-2" />
