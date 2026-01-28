@@ -28,7 +28,13 @@ interface Props {
 }
 
 type CameraStatus = "loading" | "ready" | "error" | "captured";
-type FaceStatus = "no_face" | "too_far" | "not_centered" | "ready";
+
+type FaceStatus =
+  | "no_face"
+  | "too_far"
+  | "too_close"
+  | "not_centered"
+  | "ready";
 
 export const StepSelfie = ({
   data,
@@ -53,7 +59,7 @@ export const StepSelfie = ({
     setCameraStatus("error");
   }, []);
 
-  /* 🔥 INICIALIZA FACE LANDMARKER (1x) */
+  /* 🔥 Inicializa FaceLandmarker (1x) */
   useEffect(() => {
     let cancelled = false;
 
@@ -86,7 +92,7 @@ export const StepSelfie = ({
     };
   }, []);
 
-  /* 🔥 LOOP DE DETECÇÃO REAL (DISTÂNCIA VERDADEIRA) */
+  /* 🔥 Loop de detecção */
   useEffect(() => {
     if (cameraStatus !== "ready") return;
 
@@ -116,7 +122,7 @@ export const StepSelfie = ({
         } else {
           const landmarks = result.faceLandmarks[0];
 
-          // 👁️ Distância entre os olhos (landmarks fixos)
+          // 👁️ Distância entre os olhos
           const leftEye = landmarks[33];
           const rightEye = landmarks[263];
 
@@ -124,21 +130,15 @@ export const StepSelfie = ({
           const dy = leftEye.y - rightEye.y;
           const eyeDistance = Math.sqrt(dx * dx + dy * dy);
 
-          // DEBUG REAL
-          console.log("eyeDistance:", eyeDistance.toFixed(3));
-
-          // 📏 DISTÂNCIA (TESTADO EM CELULAR + WEBCAM)
-          if (eyeDistance < 0.045) {
+          // 📏 DISTÂNCIA (3 estados)
+          if (eyeDistance < 0.15) {
             setFaceStatus("too_far");
             setCanCapture(false);
-          } else if (eyeDistance > 0.13) {
-            setFaceStatus("too_far");
-            setCanCapture(false);
-          } else if (eyeDistance < 0.10) {
-            setFaceStatus("too_far");
+          } else if (eyeDistance > 0.20) {
+            setFaceStatus("too_close");
             setCanCapture(false);
           } else {
-            // 🎯 Centralização (usando nariz)
+            // 🎯 Centralização (nariz)
             const nose = landmarks[1];
 
             if (
@@ -197,12 +197,14 @@ export const StepSelfie = ({
       case "no_face":
         return { text: "Posicione seu rosto na câmera", color: "text-warning" };
       case "too_far":
-        return { text: "Aproxime ou afaste levemente o rosto", color: "text-warning" };
+        return { text: "Aproxime o rosto", color: "text-warning" };
+      case "too_close":
+        return { text: "Afaste um pouco o rosto", color: "text-warning" };
       case "not_centered":
         return { text: "Centralize o rosto", color: "text-warning" };
       case "ready":
         return {
-          text: "Rosto alinhado – pronto para capturar",
+          text: "Rosto na distância ideal – pronto para capturar",
           color: "text-success",
         };
     }
@@ -241,9 +243,7 @@ export const StepSelfie = ({
                 audio={false}
                 mirrored
                 screenshotFormat="image/jpeg"
-                videoConstraints={{
-                  facingMode: "user",
-                }}
+                videoConstraints={{ facingMode: "user" }}
                 onUserMedia={handleUserMedia}
                 onUserMediaError={handleUserMediaError}
                 className="absolute inset-0 w-full h-full object-cover"
