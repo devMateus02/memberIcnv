@@ -46,10 +46,28 @@ export const StepSelfie = ({
   const webcamRef = useRef<Webcam>(null);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
 
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("loading");
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [faceStatus, setFaceStatus] = useState<FaceStatus>("no_face");
+  const [cameraStatus, setCameraStatus] =
+    useState<CameraStatus>("loading");
+  const [capturedImage, setCapturedImage] =
+    useState<string | null>(null);
+  const [faceStatus, setFaceStatus] =
+    useState<FaceStatus>("no_face");
   const [canCapture, setCanCapture] = useState(false);
+
+  const lastFaceStatus = useRef<FaceStatus>("no_face");
+  const lastCanCapture = useRef(false);
+
+  const updateStatus = (status: FaceStatus, capture: boolean) => {
+    if (lastFaceStatus.current !== status) {
+      lastFaceStatus.current = status;
+      setFaceStatus(status);
+    }
+
+    if (lastCanCapture.current !== capture) {
+      lastCanCapture.current = capture;
+      setCanCapture(capture);
+    }
+  };
 
   const handleUserMedia = useCallback(() => {
     setCameraStatus("ready");
@@ -70,17 +88,15 @@ export const StepSelfie = ({
 
       if (cancelled) return;
 
-      landmarkerRef.current = await FaceLandmarker.createFromOptions(
-        vision,
-        {
+      landmarkerRef.current =
+        await FaceLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath:
               "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
           },
           runningMode: "VIDEO",
           numFaces: 1,
-        }
-      );
+        });
     };
 
     init();
@@ -116,13 +132,11 @@ export const StepSelfie = ({
           performance.now()
         );
 
-        if (!result.faceLandmarks || result.faceLandmarks.length === 0) {
-          setFaceStatus("no_face");
-          setCanCapture(false);
+        if (!result.faceLandmarks?.length) {
+          updateStatus("no_face", false);
         } else {
           const landmarks = result.faceLandmarks[0];
 
-          // 👁️ Distância entre os olhos
           const leftEye = landmarks[33];
           const rightEye = landmarks[263];
 
@@ -130,15 +144,12 @@ export const StepSelfie = ({
           const dy = leftEye.y - rightEye.y;
           const eyeDistance = Math.sqrt(dx * dx + dy * dy);
 
-          // 📏 DISTÂNCIA (3 estados)
-          if (eyeDistance < 0.15) {
-            setFaceStatus("too_far");
-            setCanCapture(false);
-          } else if (eyeDistance > 0.20) {
-            setFaceStatus("too_close");
-            setCanCapture(false);
+          // 📏 DISTÂNCIA AJUSTADA (REALISTA)
+          if (eyeDistance < 0.10) {
+            updateStatus("too_far", false);
+          } else if (eyeDistance > 0.16) {
+            updateStatus("too_close", false);
           } else {
-            // 🎯 Centralização (nariz)
             const nose = landmarks[1];
 
             if (
@@ -147,11 +158,9 @@ export const StepSelfie = ({
               nose.y < 0.30 ||
               nose.y > 0.70
             ) {
-              setFaceStatus("not_centered");
-              setCanCapture(false);
+              updateStatus("not_centered", false);
             } else {
-              setFaceStatus("ready");
-              setCanCapture(true);
+              updateStatus("ready", true);
             }
           }
         }
@@ -204,7 +213,7 @@ export const StepSelfie = ({
         return { text: "Centralize o rosto", color: "text-warning" };
       case "ready":
         return {
-          text: "Rosto na distância ideal – pronto para capturar",
+          text: "Rosto na posição ideal – pronto para capturar",
           color: "text-success",
         };
     }
