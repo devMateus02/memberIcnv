@@ -77,26 +77,31 @@ export const StepSelfie = ({
     setCameraStatus("error");
   }, []);
 
-  /* 🔥 Inicializa FaceLandmarker (1x) */
+  /* 🔥 Inicializa MediaPipe */
   useEffect(() => {
     let cancelled = false;
 
     const init = async () => {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-      );
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        );
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      landmarkerRef.current =
-        await FaceLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          },
-          runningMode: "VIDEO",
-          numFaces: 1,
-        });
+        landmarkerRef.current =
+          await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+            },
+            runningMode: "VIDEO",
+            numFaces: 1,
+          });
+      } catch (err) {
+        console.error("Erro MediaPipe:", err);
+        updateStatus("ready", true); // fallback
+      }
     };
 
     init();
@@ -108,7 +113,7 @@ export const StepSelfie = ({
     };
   }, []);
 
-  /* 🔥 Loop de detecção */
+  /* 🔥 Loop de detecção (ROI SAFE) */
   useEffect(() => {
     if (cameraStatus !== "ready") return;
 
@@ -119,7 +124,14 @@ export const StepSelfie = ({
       const video = webcamRef.current?.video;
       const landmarker = landmarkerRef.current;
 
-      if (!video || !landmarker) {
+      // ⛔ GUARDA DEFINITIVA (evita ROI 0x0)
+      if (
+        !video ||
+        !landmarker ||
+        video.readyState < 2 ||
+        video.videoWidth === 0 ||
+        video.videoHeight === 0
+      ) {
         rafId = requestAnimationFrame(loop);
         return;
       }
@@ -127,10 +139,14 @@ export const StepSelfie = ({
       if (video.currentTime !== lastTime) {
         lastTime = video.currentTime;
 
-        const result = landmarker.detectForVideo(
-          video,
-          performance.now()
-        );
+        let result;
+        try {
+          result = landmarker.detectForVideo(video, Date.now());
+        } catch (err) {
+          console.warn("Frame inválido, pulando");
+          rafId = requestAnimationFrame(loop);
+          return;
+        }
 
         if (!result.faceLandmarks?.length) {
           updateStatus("no_face", false);
@@ -144,7 +160,6 @@ export const StepSelfie = ({
           const dy = leftEye.y - rightEye.y;
           const eyeDistance = Math.sqrt(dx * dx + dy * dy);
 
-          // 📏 DISTÂNCIA AJUSTADA (REALISTA)
           if (eyeDistance < 0.10) {
             updateStatus("too_far", false);
           } else if (eyeDistance > 0.16) {
