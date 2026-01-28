@@ -152,19 +152,19 @@ export const StepSelfie = ({
           updateStatus("no_face", false);
         } else {
           const landmarks = result.faceLandmarks[0];
+// 📐 Altura do rosto (testa → queixo)
+const forehead = landmarks[10];
+const chin = landmarks[152];
 
-          const leftEye = landmarks[33];
-          const rightEye = landmarks[263];
+const faceHeight = Math.abs(forehead.y - chin.y);
 
-          const dx = leftEye.x - rightEye.x;
-          const dy = leftEye.y - rightEye.y;
-          const eyeDistance = Math.sqrt(dx * dx + dy * dy);
+// 🔍 limites dinâmicos (funcionam em celular)
+if (faceHeight < 0.28) {
+  updateStatus("too_far", false);
+} else if (faceHeight > 0.45) {
+  updateStatus("too_close", false);
+} else {
 
-          if (eyeDistance < 0.10) {
-            updateStatus("too_far", false);
-          } else if (eyeDistance > 0.16) {
-            updateStatus("too_close", false);
-          } else {
             const nose = landmarks[1];
 
             if (
