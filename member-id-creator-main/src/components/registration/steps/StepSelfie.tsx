@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FormWrapper } from "../FormWrapper";
 import { RegistrationData } from "@/types/registration";
@@ -13,6 +13,11 @@ import {
 } from "lucide-react";
 
 import { uploadSelfie } from "@/api/users.api";
+
+import {
+  FaceLandmarker,
+  FilesetResolver,
+} from "@mediapipe/tasks-vision";
 
 interface Props {
   data: RegistrationData;
@@ -33,6 +38,7 @@ export const StepSelfie = ({
   currentStep,
 }: Props) => {
   const webcamRef = useRef<Webcam>(null);
+  const landmarkerRef = useRef<FaceLandmarker | null>(null);
 
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>("loading");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -47,86 +53,115 @@ export const StepSelfie = ({
     setCameraStatus("error");
   }, []);
 
-  /* 🔥 MediaPipe Face Detection – IMPORT CORRETO */
+  /* 🔥 INICIALIZA FACE LANDMARKER (1x) */
   useEffect(() => {
-    if (cameraStatus !== "ready") return;
-    if (!webcamRef.current?.video) return;
-
-    let detector: any;
-    let rafId: number;
     let cancelled = false;
 
-    const startDetection = async () => {
-      const video = webcamRef.current!.video!;
-
-      // ✅ IMPORT DINÂMICO DO ARQUIVO CERTO
-      const module = await import(
-        "@mediapipe/face_detection/face_detection.js"
+    const init = async () => {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
       );
 
-      const FaceDetection = module.FaceDetection;
+      if (cancelled) return;
 
-      detector = new FaceDetection({
-        locateFile: (file: string) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`,
-      });
-
-      detector.setOptions({
-        model: "short",
-        minDetectionConfidence: 0.6,
-      });
-
-      detector.onResults((results: any) => {
-        if (!results.detections || results.detections.length !== 1) {
-          setFaceStatus("no_face");
-          setCanCapture(false);
-          return;
+      landmarkerRef.current = await FaceLandmarker.createFromOptions(
+        vision,
+        {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+          },
+          runningMode: "VIDEO",
+          numFaces: 1,
         }
-
-        const box = results.detections[0].boundingBox;
-        if (!box) return;
-
-        const { width, height, xCenter, yCenter } = box;
-
-        if (width < 0.25 || height < 0.35) {
-          setFaceStatus("too_far");
-          setCanCapture(false);
-          return;
-        }
-
-        if (
-          xCenter < 0.4 ||
-          xCenter > 0.6 ||
-          yCenter < 0.35 ||
-          yCenter > 0.65
-        ) {
-          setFaceStatus("not_centered");
-          setCanCapture(false);
-          return;
-        }
-
-        setFaceStatus("ready");
-        setCanCapture(true);
-      });
-
-      const loop = async () => {
-        if (cancelled) return;
-        if (video.readyState === 4) {
-          await detector.send({ image: video });
-        }
-        rafId = requestAnimationFrame(loop);
-      };
-
-      loop();
+      );
     };
 
-    startDetection();
+    init();
 
     return () => {
       cancelled = true;
-      if (rafId) cancelAnimationFrame(rafId);
-      if (detector) detector.close();
+      landmarkerRef.current?.close();
+      landmarkerRef.current = null;
     };
+  }, []);
+
+  /* 🔥 LOOP DE DETECÇÃO REAL (DISTÂNCIA VERDADEIRA) */
+  useEffect(() => {
+    if (cameraStatus !== "ready") return;
+
+    let rafId = 0;
+    let lastTime = -1;
+
+    const loop = () => {
+      const video = webcamRef.current?.video;
+      const landmarker = landmarkerRef.current;
+
+      if (!video || !landmarker) {
+        rafId = requestAnimationFrame(loop);
+        return;
+      }
+
+      if (video.currentTime !== lastTime) {
+        lastTime = video.currentTime;
+
+        const result = landmarker.detectForVideo(
+          video,
+          performance.now()
+        );
+
+        if (!result.faceLandmarks || result.faceLandmarks.length === 0) {
+          setFaceStatus("no_face");
+          setCanCapture(false);
+        } else {
+          const landmarks = result.faceLandmarks[0];
+
+          // 👁️ Distância entre os olhos (landmarks fixos)
+          const leftEye = landmarks[33];
+          const rightEye = landmarks[263];
+
+          const dx = leftEye.x - rightEye.x;
+          const dy = leftEye.y - rightEye.y;
+          const eyeDistance = Math.sqrt(dx * dx + dy * dy);
+
+          // DEBUG REAL
+          console.log("eyeDistance:", eyeDistance.toFixed(3));
+
+          // 📏 DISTÂNCIA (TESTADO EM CELULAR + WEBCAM)
+          if (eyeDistance < 0.045) {
+            setFaceStatus("too_far");
+            setCanCapture(false);
+          } else if (eyeDistance > 0.13) {
+            setFaceStatus("too_far");
+            setCanCapture(false);
+          } else if (eyeDistance < 0.10) {
+            setFaceStatus("too_far");
+            setCanCapture(false);
+          } else {
+            // 🎯 Centralização (usando nariz)
+            const nose = landmarks[1];
+
+            if (
+              nose.x < 0.35 ||
+              nose.x > 0.65 ||
+              nose.y < 0.30 ||
+              nose.y > 0.70
+            ) {
+              setFaceStatus("not_centered");
+              setCanCapture(false);
+            } else {
+              setFaceStatus("ready");
+              setCanCapture(true);
+            }
+          }
+        }
+      }
+
+      rafId = requestAnimationFrame(loop);
+    };
+
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   }, [cameraStatus]);
 
   const capture = useCallback(() => {
@@ -162,7 +197,7 @@ export const StepSelfie = ({
       case "no_face":
         return { text: "Posicione seu rosto na câmera", color: "text-warning" };
       case "too_far":
-        return { text: "Aproxime o rosto", color: "text-warning" };
+        return { text: "Aproxime ou afaste levemente o rosto", color: "text-warning" };
       case "not_centered":
         return { text: "Centralize o rosto", color: "text-warning" };
       case "ready":
@@ -185,38 +220,35 @@ export const StepSelfie = ({
     >
       <div className="space-y-6">
         <div className="relative aspect-[3/4] max-w-sm mx-auto overflow-hidden rounded-2xl bg-muted">
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {cameraStatus === "loading" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+              <motion.div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-10 h-10 animate-spin" />
                 <p>Iniciando câmera...</p>
-              </div>
+              </motion.div>
             )}
 
             {cameraStatus === "error" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+              <motion.div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <AlertCircle className="w-12 h-12 text-destructive" />
                 <p>Câmera não disponível</p>
-              </div>
+              </motion.div>
             )}
 
-            {(cameraStatus === "ready" || cameraStatus === "loading") &&
-              !capturedImage && (
-                <Webcam
-                  ref={webcamRef}
-                  audio={false}
-                  screenshotFormat="image/jpeg"
-                  mirrored
-                  videoConstraints={{
-                    facingMode: "user",
-                    width: 480,
-                    height: 640,
-                  }}
-                  onUserMedia={handleUserMedia}
-                  onUserMediaError={handleUserMediaError}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              )}
+            {cameraStatus !== "captured" && (
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                mirrored
+                screenshotFormat="image/jpeg"
+                videoConstraints={{
+                  facingMode: "user",
+                }}
+                onUserMedia={handleUserMedia}
+                onUserMediaError={handleUserMediaError}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
 
             {cameraStatus === "captured" && capturedImage && (
               <img
@@ -247,7 +279,7 @@ export const StepSelfie = ({
           </Button>
         )}
 
-        {cameraStatus === "captured" && capturedImage && (
+        {cameraStatus === "captured" && (
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1" onClick={retake}>
               <RotateCcw className="w-5 h-5 mr-2" />
