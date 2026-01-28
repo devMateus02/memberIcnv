@@ -12,7 +12,7 @@ export function PendingMemberModal({ member, onClose }) {
   const cardBackRef = useRef<HTMLDivElement>(null);
 
   const refAtual = lado === "frente" ? cardFrontRef : cardBackRef;
-
+console.log("MEMBRO NO MODAL:", member.selfie_url);
   const downloadPDF = async () => {
     if (!refAtual.current) return;
 
@@ -134,11 +134,15 @@ export function PendingMemberModal({ member, onClose }) {
                           <div className="w-[140px] bg-blue-900 relative flex items-center justify-center">
                             <div className="absolute inset-0 rounded-r-[120px] bg-blue-800" />
                             <div className="relative z-10 w-28 h-28 rounded-full border-2 border-white overflow-hidden">
-                              <img
-                                crossOrigin="anonymous"
-                                src={member.selfie_url}
-                                className="w-full h-full object-cover"
-                              />
+                             <img
+  src={member.selfie_url}
+  alt={`Selfie de ${member.name}`}
+  className="w-full h-full object-cover"
+  crossOrigin="anonymous"
+  referrerPolicy="no-referrer"
+  loading="eager"
+/>
+
                             </div>
                           </div>
 

@@ -25,7 +25,7 @@ export default function MemberDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen min-w-screen flex items-center justify-center">
         <p className="text-gray-500">Carregando dados...</p>
       </div>
     );
@@ -71,7 +71,7 @@ export default function MemberDashboard() {
   // ✅ ATIVO
   if (status === "active") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className=" flex items-center justify-center bg-muted">
         <MemberCard />
       </div>
     );

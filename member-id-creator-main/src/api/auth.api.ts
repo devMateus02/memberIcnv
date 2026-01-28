@@ -3,6 +3,7 @@ import { RegistrationData } from '@/types/registration';
 
 export const registerUser = async (data: RegistrationData) => {
   const response = await api.post('/auth/register', data);
+  console.log("REGISTER USER RESPONSE:", response.data);
   return response.data;
 };
 

@@ -54,7 +54,7 @@ export const initialRegistrationData: RegistrationData = {
   zipCode: '',
   password: '',
   confirmPassword: '',
-  selfie_url: '',
+  selfie_url: undefined,
   ministries: [],
   baptismDate:''
 };

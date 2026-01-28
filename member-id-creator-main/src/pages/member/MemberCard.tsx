@@ -51,16 +51,21 @@ const titulo = getTituloCarteirinha(user.ministries);
 
 
   return (
-    <div className="flex flex-row justify-center items-center gap-4">
+    <div className="flex flex-row justify-center items-center gap-4 overflow-hidden">
 
    
 
+
+
+
+      {/* 📱 MOBILE ROTATION (TAILWIND) */}
+      <div className=" h-screen flex justify-center items-center">
 <button
   onClick={() => setLado(lado === "frente" ? "verso" : "frente")}
   className="
    
-    fixed bottom-6 right-6
-    w-14 h-14
+    fixed top-1 right-2
+    w-12 h-12
     rounded-full
     bg-blue-600 text-white
     flex items-center justify-center
@@ -86,16 +91,11 @@ const titulo = getTituloCarteirinha(user.ministries);
     <path d="M21 13v2a4 4 0 01-4 4H3" />
   </svg>
 </button>
-
-
-
-      {/* 📱 MOBILE ROTATION (TAILWIND) */}
-      <div className="flex justify-center items-center">
      <div
   className="
     relative w-[420px] h-[220px]
 
-    rotate-90 scale-[1.10]
+    rotate-90 scale-[1.30]
     sm:rotate-0 :scale-100
 
     transition-transform duration-300

@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FormWrapper } from "../FormWrapper";
 import { RegistrationData } from "@/types/registration";
+import { uploadSelfie } from "../../../api/users.api";
+
 import {
   Camera,
   RotateCcw,
@@ -11,8 +13,6 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-
-import { uploadSelfie } from "@/api/users.api";
 
 import {
   FaceLandmarker,
@@ -22,7 +22,7 @@ import {
 interface Props {
   data: RegistrationData;
   onUpdate: (updates: Partial<RegistrationData>) => void;
-  onNext: () => void;
+  onNext: (selfieurl: string) => void;
   onBack: () => void;
   currentStep: number;
 }
@@ -76,6 +76,11 @@ export const StepSelfie = ({
   const handleUserMediaError = useCallback(() => {
     setCameraStatus("error");
   }, []);
+useEffect(() => {
+  onUpdate({ selfie_url: "" });
+}, []);
+
+
 
   /* 🔥 Inicializa MediaPipe */
   useEffect(() => {
@@ -203,18 +208,33 @@ if (faceHeight < 0.28) {
     setCameraStatus("ready");
   }, []);
 
-  const confirm = useCallback(async () => {
-    if (!capturedImage) return;
+const confirm = useCallback(async () => {
+  if (!capturedImage) {
+    alert("Tire a foto primeiro");
+    return;
+  }
 
-    try {
-      const selfieUrl = await uploadSelfie(capturedImage);
-      onUpdate({ selfie_url: selfieUrl });
-      onNext();
-    } catch (err) {
-      console.error(err);
+  try {
+    const selfieUrl = await uploadSelfie(capturedImage);
+
+    if (!selfieUrl) {
       alert("Erro ao enviar selfie");
+      return;
     }
-  }, [capturedImage, onUpdate, onNext]);
+
+    console.log("SELFIE UPLOADED URL:", selfieUrl);
+
+    // ✅ atualiza o estado global
+    onUpdate({ selfie_url: selfieUrl });
+     onNext(selfieUrl);
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao enviar selfie");
+  }
+}, [capturedImage, onUpdate, onNext]);
+
+
+
 
   const getFaceStatusMessage = () => {
     switch (faceStatus) {

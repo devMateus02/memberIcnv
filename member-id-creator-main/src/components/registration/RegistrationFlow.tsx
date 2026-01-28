@@ -11,6 +11,8 @@ import { StepSelfie } from './steps/StepSelfie';
 import { useRegistration } from '@/hooks/useRegistration';
 import { StepChurchInfo } from './steps/StepChurchInfo';
 import { registerUser } from '../../api/auth.api';
+
+
 type FlowState = 'welcome' | 'form' | 'success';
 
 export const RegistrationFlow = () => {
@@ -30,6 +32,9 @@ export const RegistrationFlow = () => {
 
   const handleStartRegistration = () => {
     // Get button position for clip-path origin
+
+    resetRegistration()
+
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const x = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
@@ -44,10 +49,20 @@ export const RegistrationFlow = () => {
     }, 800);
   };
 
- const handleComplete = async () => {
+const handleComplete = async (selfieUrl?: string) => {
   try {
-    await registerUser(data);
+    if (!selfieUrl) {
+      alert("Selfie não enviada corretamente");
+      return;
+    }
+
+    await registerUser({
+      ...data,
+      selfie_url: selfieUrl, // ✅ GARANTIDO
+    });
+
     setFlowState("success");
+    resetRegistration();
   } catch (err) {
     console.error(err);
     alert("Erro ao enviar cadastro");
@@ -55,17 +70,39 @@ export const RegistrationFlow = () => {
 };
 
 
+
   const handleAccessNow = () => {
     setFlowState('welcome');
   };
 
-  const handleNext = () => {
-    if (currentStep === 7) {
-      handleComplete();
-    } else {
-      nextStep();
+const handleNext = () => {
+  // 👇 estamos no passo da selfie
+  if (currentStep === 7) {
+    if (!data.selfie_url) {
+      alert("Aguarde o envio da selfie antes de continuar");
+      return;
     }
-  };
+    handleComplete();
+    return;
+  }
+
+  nextStep();
+};
+
+const handleSelfieNext = async (selfieUrl: string) => {
+  try {
+    await registerUser({
+      ...data,
+      selfie_url: selfieUrl, // 🔒 garantido
+    });
+
+    setFlowState("success");
+    resetRegistration();
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao enviar cadastro");
+  }
+};
 
   const renderStep = () => {
     const stepProps = {
@@ -90,7 +127,17 @@ export const RegistrationFlow = () => {
       case 6:
         return <StepChurchInfo {...stepProps} />;
       case 7:
-        return <StepSelfie {...stepProps} />;
+        
+  return (
+    <StepSelfie
+      data={data}
+      onUpdate={updateData}
+      onNext={handleSelfieNext} // 👈 AQUI
+      onBack={prevStep}
+      currentStep={currentStep}
+    />
+  );
+;
       default:
         return <StepPersonalData {...stepProps} />;
     }
