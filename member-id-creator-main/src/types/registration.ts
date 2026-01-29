@@ -1,7 +1,7 @@
 export interface RegistrationData {
   // Step 1 - Personal Data
   fullName: string;
-  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | '';
+  gender: 'Masculino' | 'Feminino' | '';
   birthDate: string;
   
   // Step 2 - Parents
