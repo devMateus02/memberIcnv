@@ -205,7 +205,8 @@ const handleSelfieNext = async (selfieUrl: string) => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    
+</div>
 </div>
   );
 };
