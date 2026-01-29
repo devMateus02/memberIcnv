@@ -144,7 +144,8 @@ const handleSelfieNext = async (selfieUrl: string) => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+<div className="relative min-h-screen"
+    <div className="overflow-hidden">
       {/* Welcome Screen */}
       <AnimatePresence>
         {flowState === 'welcome' && !isTransitioning && (
@@ -205,5 +206,6 @@ const handleSelfieNext = async (selfieUrl: string) => {
         )}
       </AnimatePresence>
     </div>
+</div>
   );
 };
