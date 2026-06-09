@@ -7,6 +7,7 @@ export const listMinistries = async (req, res) => {
     );
     res.json(rows);
   } catch (e) {
+    console.error("Error fetching ministries:", e);
     console.error(e);
     res.status(500).json({ error: "Erro ao listar ministérios" });
   }

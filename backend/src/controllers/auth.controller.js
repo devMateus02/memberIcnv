@@ -117,46 +117,100 @@ export const register = async (req, res) => {
   }
 };
 
+export const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Email é obrigatório",
+      });
+    }
+
+    const [rows] = await db.query(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
+
+    return res.json({
+      exists: rows.length > 0,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Erro ao verificar email",
+    });
+  }
+};
+
+
 export const login = async (req, res) => {
-  console.log("Login attempt:", req.body);
+ 
+
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email e senha são obrigatórios" });
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Email e senha são obrigatórios",
+      });
+    }
 
     const [rows] = await db.query(
       "SELECT id, role, status, password_hash FROM users WHERE email = ?",
       [email]
     );
-    if (!rows.length) return res.status(401).json({ error: "Credenciais inválidas" });
+
+    if (!rows.length) {
+      return res.status(401).json({
+        error: "Credenciais inválidas",
+      });
+    }
 
     const user = rows[0];
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) return res.status(401).json({ error: "Credenciais inválidas" });
 
-    if (user.status !== "active") {
-      return res.status(403).json({ error: "Cadastro ainda não aprovado" });
+    const ok = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
+    if (!ok) {
+      return res.status(401).json({
+        error: "Credenciais inválidas",
+      });
     }
 
     const token = jwt.sign(
-      { sub: user.id, role: user.role },
+      {
+        sub: user.id,
+        role: user.role,
+        status: user.status,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      {
+        expiresIn: "7d",
+      }
     );
 
     return res.json({
-  token,
-  user: {
-    id: user.id,
-    role: user.role,
-  },
-});
+      token,
+      user: {
+        id: user.id,
+        role: user.role,
+        status: user.status,
+      },
+    });
 
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ error: "Erro no login" });
+
+    return res.status(500).json({
+      error: "Erro no login",
+    });
   }
 };
-
 
 export const logout = async (req, res) => {
   return res.json({ message: "Logout realizado com sucesso" });

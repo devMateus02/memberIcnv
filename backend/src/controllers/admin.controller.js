@@ -52,7 +52,6 @@ export const listPending = async (req, res) => {
   }
 };
 
-
 export const approveUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -102,4 +101,43 @@ export const rejectUser = async (req, res) => {
   }
 };
 
+export const getUsersStats = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        COUNT(*) AS total,
 
+        SUM(
+          CASE
+            WHEN status = 'active' THEN 1
+            ELSE 0
+          END
+        ) AS approved,
+
+        SUM(
+          CASE
+            WHEN status = 'pending' THEN 1
+            ELSE 0
+          END
+        ) AS pending,
+
+        SUM(
+          CASE
+            WHEN status = 'inactive' THEN 1
+            ELSE 0
+          END
+        ) AS rejected
+
+      FROM users
+    `);
+
+    return res.json(rows[0]);
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Erro ao buscar estatísticas"
+    });
+  }
+};

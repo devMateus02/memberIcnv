@@ -4,7 +4,7 @@ import { adminOnly } from "../middleware/adminOnly.js";
 import {
   listPending,
   approveUser,
-  rejectUser,
+  rejectUser, getUsersStats
 } from "../controllers/admin.controller.js";
 
 const router = Router();
@@ -29,5 +29,11 @@ router.post("/logout", auth, (req, res) => {
   return res.json({ message: "Logout realizado com sucesso" });
 });
 
+router.get(
+  "/stats",
+  auth,
+  getUsersStats
+);
 
 export default router;
+
