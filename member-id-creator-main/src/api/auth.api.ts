@@ -7,8 +7,15 @@ export const registerUser = async (data: RegistrationData) => {
   return response.data;
 };
 
+export const checkEmailExists = async (email: string) => {
+  const response = await api.get('/auth/checkEmail', {
+    params: {
+      email,
+    },
+  });
 
-
+  return response.data;
+};
 
 export const loginUser = async (email: string, password: string) => {
   const res = await api.post("/auth/login", { email, password });

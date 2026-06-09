@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { FormWrapper } from '../FormWrapper';
 import { RegistrationData } from '@/types/registration';
 import { Check, X } from 'lucide-react';
-
+import api from "../../../api/http"
 interface Props {
   data: RegistrationData;
   onUpdate: (updates: Partial<RegistrationData>) => void;
@@ -33,6 +33,47 @@ const isValidEmail = (email: string) => {
 export const StepContacts = ({ data, onUpdate, onNext, onBack, currentStep }: Props) => {
   const [isValid, setIsValid] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
+const [checkingEmail, setCheckingEmail] = useState(false);
+
+const checkEmailExists = async (email: string) => {
+  if (!isValidEmail(email)) return;
+
+  console.log("verificando", email)
+
+  try {
+    setCheckingEmail(true);
+
+    const { data } = await api.get(
+      `/auth/checkEmail`,
+      {
+        params: { email }
+      }
+
+    );
+
+    console.log('RESPOSTA API:', data);
+
+    setEmailExists(data.exists);
+  } catch (error) {
+    console.error('Erro ao verificar email:', error);
+  } finally {
+    setCheckingEmail(false);
+  }
+};
+
+useEffect(() => {
+  if (!isValidEmail(data.email)) {
+    setEmailExists(false);
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    checkEmailExists(data.email);
+  }, 500);
+
+  return () => clearTimeout(timer);
+}, [data.email]);
 
   useEffect(() => {
     const phoneValid = data.primaryPhone.replace(/\D/g, '').length >= 10;
@@ -113,6 +154,26 @@ export const StepContacts = ({ data, onUpdate, onNext, onBack, currentStep }: Pr
           {emailTouched && !emailIsValid && data.email && (
             <p className="text-sm text-destructive">Digite um email válido</p>
           )}
+          {checkingEmail && (
+  <p className="text-sm text-muted-foreground">
+    Verificando email...
+  </p>
+)}
+
+{!checkingEmail && emailExists && (
+  <p className="text-sm text-destructive">
+    Este email já está cadastrado
+  </p>
+)}
+
+{!checkingEmail &&
+  !emailExists &&
+  emailTouched &&
+  emailIsValid && (
+    <p className="text-sm text-green-600">
+      Email disponível
+    </p>
+)}
         </div>
 
         {/* Botão */}
@@ -121,7 +182,7 @@ export const StepContacts = ({ data, onUpdate, onNext, onBack, currentStep }: Pr
           size="lg"
           className="w-full mt-8"
           onClick={onNext}
-          disabled={!isValid}
+          disabled={!isValid || emailExists || checkingEmail}
         >
           Continuar
         </Button>

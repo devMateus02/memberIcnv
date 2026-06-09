@@ -38,9 +38,9 @@ login({ token: res.token, role: res.user.role });
 
 // 🔴 SÓ DEPOIS navega
 if (res.user.role === "admin") {
-  navigate("/admin");
+  window.location.href = "/admin";
 } else {
-  navigate("/member");
+  window.location.href = "/member";
 }
 
   } catch (err) {

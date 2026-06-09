@@ -4,13 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FormWrapper } from '../FormWrapper';
 import { RegistrationData } from '@/types/registration';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 
 interface Props {
   data: RegistrationData;
@@ -55,20 +49,21 @@ export const StepPersonalData = ({ data, onUpdate, onNext, onBack, currentStep }
 
         {/* Sexo */}
         <div className="space-y-2">
-          <Label htmlFor="gender">Sexo</Label>
-          <Select
-            value={data.gender}
-            onValueChange={(value: RegistrationData['gender']) => onUpdate({ gender: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione seu sexo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Masculino">Masculino</SelectItem>
-              <SelectItem value="Feminino">Feminino</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+  <Label htmlFor="gender">Sexo</Label>
+
+  <select
+    id="gender"
+    value={data.gender}
+    onChange={(e) =>
+      onUpdate({ gender: e.target.value })
+    }
+    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+  >
+    <option value="">Selecione seu sexo</option>
+    <option value="Masculino">Masculino</option>
+    <option value="Feminino">Feminino</option>
+  </select>
+</div>
 
         {/* Data de nascimento */}
         <div className="space-y-2">

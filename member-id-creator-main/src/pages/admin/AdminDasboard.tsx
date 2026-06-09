@@ -3,7 +3,7 @@ import { PendingMembers } from "./components/PendingMembers";
 import { Birthdays } from "./components/Birthdays";
 import { MembersByMinistry } from "./components/MembersByMinistry";
 import { logout } from "../../api/auth.api";
-
+import { UsersTable } from "./components/UsersTable";
 export default function AdminDashboard() {
 
   const handleLogout = async () => {
@@ -17,6 +17,7 @@ export default function AdminDashboard() {
       window.location.href = "/login";
     }
   };
+
 
   return (
     <div className="min-h-screen bg-muted p-6 space-y-6">
@@ -34,12 +35,8 @@ export default function AdminDashboard() {
 
       <StatsCards />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PendingMembers />
-        <Birthdays />
-      </div>
-
-      <MembersByMinistry />
+     
+      <UsersTable/>
     </div>
   );
 }

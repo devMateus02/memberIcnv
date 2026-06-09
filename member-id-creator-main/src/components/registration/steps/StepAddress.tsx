@@ -4,13 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FormWrapper } from '../FormWrapper';
 import { RegistrationData } from '@/types/registration';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 
 interface Props {
   data: RegistrationData;
@@ -135,23 +129,25 @@ export const StepAddress = ({ data, onUpdate, onNext, onBack, currentStep }: Pro
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="state">UF</Label>
-            <Select
-              value={data.state}
-              onValueChange={(value) => onUpdate({ state: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="UF" />
-              </SelectTrigger>
-              <SelectContent>
-                {brazilianStates.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+  <Label htmlFor="state">UF</Label>
+
+  <select
+    id="state"
+    value={data.state}
+    onChange={(e) =>
+      onUpdate({ state: e.target.value })
+    }
+    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+  >
+    <option value="">UF</option>
+
+    {brazilianStates.map((state) => (
+      <option key={state} value={state}>
+        {state}
+      </option>
+    ))}
+  </select>
+</div>
         </div>
 
         {/* Botão */}

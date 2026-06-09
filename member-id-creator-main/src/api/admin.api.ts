@@ -6,3 +6,8 @@ export const pendingUser = async (data: RegistrationData) => {
   console.log("PENDING USERS:", res.data);
   return res.data;
 };
+
+export const getUsersStats = async () => {
+  const response = await api.get("/admin/stats");
+  return response.data;
+};
