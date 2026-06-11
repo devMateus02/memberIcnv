@@ -196,11 +196,7 @@ export function UsersTable() {
             <p className="text-sm font-semibold text-slate-800">
               Membros cadastrados
             </p>
-            <p className="text-xs text-slate-400">
-              {filteredUsers.length} membro
-              {filteredUsers.length !== 1 ? "s" : ""} encontrado
-              {filteredUsers.length !== 1 ? "s" : ""}
-            </p>
+         
           </div>
         </div>
 
@@ -243,7 +239,7 @@ export function UsersTable() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => {
+              {filteredUsers.filter(users=> users.role === 'member').map((user) => {
                 const st = statusConfig[user.status] ?? statusConfig.pending;
                 return (
                   <tr
@@ -311,9 +307,7 @@ export function UsersTable() {
 
       {/* ── Footer ── */}
       <div className="border-t border-slate-100 bg-slate-50 px-6 py-2.5">
-        <p className="text-xs text-slate-400">
-          Mostrando {filteredUsers.length} de {users.length} membros
-        </p>
+       
       </div>
 
       {/* ════════════════════════════════════════════════

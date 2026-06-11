@@ -35,7 +35,7 @@ export default function AdminDashboard() {
 
       <StatsCards />
 
-     
+     <PendingMembers/>
       <UsersTable/>
     </div>
   );
