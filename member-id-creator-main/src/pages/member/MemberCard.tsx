@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getUserProfile } from "../../api/users.api";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
+
+function formatDateSafe(value?: string | null): string {
+  if (!value) return "—";
+  const datePart = String(value).split("T")[0]; // "2000-05-15"
+  const [year, month, day] = datePart.split("-");
+  if (!year || !month || !day) return "—";
+  return `${day}/${month}/${year}`;
+}
 
 export function MemberCard() {
   const [user, setUser] = useState(null);
@@ -167,11 +174,7 @@ const titulo = getTituloCarteirinha(user.ministries);
                             Batismo
                           </label>
                           <div className="text-[11px]">
-                            {user.baptism_date
-                              ? format(parseISO(user.baptism_date), "dd/MM/yyyy", {
-                                  locale: ptBR,
-                                })
-                              : "—"}
+                            {formatDateSafe(user.baptism_date)}
                           </div>
                         </div>
 
@@ -180,11 +183,7 @@ const titulo = getTituloCarteirinha(user.ministries);
                             Nascimento
                           </label>
                           <div className="text-[11px]">
-                            {user.birth_date
-                              ? format(parseISO(user.birth_date), "dd/MM/yyyy", {
-                                  locale: ptBR,
-                                })
-                              : "—"}
+                            {formatDateSafe(user.birth_date)}
                           </div>
                         </div>
                       </div>

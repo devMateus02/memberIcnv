@@ -37,6 +37,7 @@ export function PendingMembers() {
         <PendingMemberModal
           member={selectedMember}
           onClose={() => setSelectedMember(null)}
+          onSaved={load}
         />
       )}
     </div>
