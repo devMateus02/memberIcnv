@@ -1,5 +1,6 @@
 import { db } from "../config/db.js";
 import { randomUUID } from "crypto";
+
 export const getLoggedUser = async (req, res) => {
   try {
     const userId = req.user.sub;
