@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getUsers } from "@/api/users.api";
 import { updateUser } from "@/api/users.api";
 import { getMinistries } from "@/api/ministries.api";
+import { deactivateUser, activateUser } from "@/api/admin.api";
 import {
   Dialog,
   DialogContent,
@@ -156,6 +157,26 @@ export function UsersTable() {
       await updateUser(selectedUser!.id, form);
       setSelectedUser(form);
       setEditing(false);
+      await loadUsers();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    if (!selectedUser) return;
+
+    const reactivating = selectedUser.status === "inactive";
+    try {
+      if (reactivating) {
+        await activateUser(selectedUser.id);
+      } else {
+        await deactivateUser(selectedUser.id);
+      }
+
+      const newStatus = reactivating ? "active" : "inactive";
+      setSelectedUser({ ...selectedUser, status: newStatus });
+      setForm((f: any) => ({ ...f, status: newStatus }));
       await loadUsers();
     } catch (error) {
       console.error(error);
@@ -654,12 +675,26 @@ export function UsersTable() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setEditing(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-800"
-                  >
-                    Editar
-                  </button>
+                  <>
+                    {(selectedUser.status === "active" || selectedUser.status === "inactive") && (
+                      <button
+                        onClick={handleToggleActive}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                          selectedUser.status === "inactive"
+                            ? "border-green-200 text-green-700 hover:bg-green-50"
+                            : "border-red-200 text-red-700 hover:bg-red-50"
+                        }`}
+                      >
+                        {selectedUser.status === "inactive" ? "Reativar conta" : "Desativar conta"}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-800"
+                    >
+                      Editar
+                    </button>
+                  </>
                 )}
               </div>
             </div>

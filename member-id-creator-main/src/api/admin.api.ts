@@ -11,3 +11,13 @@ export const getUsersStats = async () => {
   const response = await api.get("/admin/stats");
   return response.data;
 };
+
+export const deactivateUser = async (id: string) => {
+  const response = await api.put(`/admin/users/${id}/deactivate`);
+  return response.data;
+};
+
+export const activateUser = async (id: string) => {
+  const response = await api.put(`/admin/users/${id}/activate`);
+  return response.data;
+};

@@ -4,6 +4,8 @@ import { Birthdays } from "./components/Birthdays";
 import { MembersByMinistry } from "./components/MembersByMinistry";
 import { logout } from "../../api/auth.api";
 import { UsersTable } from "./components/UsersTable";
+import { EventsManager } from "./components/EventsManager";
+import { InactiveUsersTable } from "./components/InactiveUsersTable";
 export default function AdminDashboard() {
 
   const handleLogout = async () => {
@@ -36,7 +38,9 @@ export default function AdminDashboard() {
       <StatsCards />
 
      <PendingMembers/>
+      <EventsManager/>
       <UsersTable/>
+      <InactiveUsersTable/>
     </div>
   );
 }

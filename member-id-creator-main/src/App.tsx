@@ -10,6 +10,9 @@ import { RegistrationFlow } from "./components/registration/RegistrationFlow";
 import { ProtectedRoute } from "./pages/ProtectedRoute";
 import AdminDashboard from "./pages/admin/AdminDasboard";
 import MemberDashboard from "./pages/member/MemberDashboard";
+import MemberLayout from "./pages/member/MemberLayout";
+import MemberSettings from "./pages/member/MemberSettings";
+import MemberAgenda from "./pages/member/MemberAgenda";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +31,18 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
          
           
-            <Route path="/member" element={<ProtectedRoute role="member"><MemberDashboard /></ProtectedRoute>} />
+            <Route
+              path="/member"
+              element={
+                <ProtectedRoute role="member">
+                  <MemberLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<MemberDashboard />} />
+              <Route path="agenda" element={<MemberAgenda />} />
+              <Route path="settings" element={<MemberSettings />} />
+            </Route>
          
         </Routes>
       </BrowserRouter>

@@ -1,8 +1,12 @@
 import  api  from "./http";
 
-export const uploadSelfie = async (imageBase64: string): Promise<string> => {
+export const uploadSelfie = async (
+  imageBase64: string,
+  previousUrl?: string
+): Promise<string> => {
   const response = await api.post("/upload/selfie", {
     imageBase64,
+    previousUrl,
   });
 
   return response.data.url;

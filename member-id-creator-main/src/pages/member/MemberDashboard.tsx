@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { MemberCard } from "./MemberCard";
 import { getUserProfile } from "../../api/users.api";
 
-type MemberStatus = "pending" | "active" | "blocked" | "rejected";
+type MemberStatus = "pending" | "active" | "blocked" | "rejected" | "inactive";
 
 export default function MemberDashboard() {
   const [member, setMember] = useState(null);
@@ -25,7 +25,7 @@ export default function MemberDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen min-w-screen flex items-center justify-center">
+      <div className="flex min-h-[70vh] items-center justify-center">
         <p className="text-gray-500">Carregando dados...</p>
       </div>
     );
@@ -38,7 +38,7 @@ export default function MemberDashboard() {
   // ⏳ PENDENTE
   if (status === "pending") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="flex min-h-[70vh] items-center justify-center bg-muted">
         <div className="bg-white p-8 rounded-xl shadow-md max-w-md text-center">
           <h2 className="text-xl font-semibold text-gray-700 mb-2">
             Cadastro em análise
@@ -55,13 +55,29 @@ export default function MemberDashboard() {
   // ❌ BLOQUEADO / RECUSADO
   if (status === "blocked" || status === "rejected") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="flex min-h-[70vh] items-center justify-center bg-muted">
         <div className="bg-white p-8 rounded-xl shadow-md max-w-md text-center">
           <h2 className="text-xl font-semibold text-red-600 mb-2">
             Cadastro não aprovado
           </h2>
           <p className="text-gray-500 text-sm">
             Seu cadastro não foi aceito. Caso tenha dúvidas, procure a secretaria.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🚫 DESATIVADO
+  if (status === "inactive") {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center bg-muted">
+        <div className="bg-white p-8 rounded-xl shadow-md max-w-md text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">
+            Conta desativada
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Sua conta foi desativada pela administração. Caso tenha dúvidas, procure a secretaria.
           </p>
         </div>
       </div>
