@@ -101,6 +101,28 @@ export const rejectUser = async (req, res) => {
   }
 };
 
+export const deactivateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await db.query("UPDATE users SET status='inactive' WHERE id=?", [userId]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Erro ao desativar usuário" });
+  }
+};
+
+export const activateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await db.query("UPDATE users SET status='active' WHERE id=?", [userId]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Erro ao reativar usuário" });
+  }
+};
+
 export const getUsersStats = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -123,10 +145,17 @@ export const getUsersStats = async (req, res) => {
 
         SUM(
           CASE
+            WHEN status = 'blocked' THEN 1
+            ELSE 0
+          END
+        ) AS rejected,
+
+        SUM(
+          CASE
             WHEN status = 'inactive' THEN 1
             ELSE 0
           END
-        ) AS rejected
+        ) AS deactivated
 
       FROM users
     `);

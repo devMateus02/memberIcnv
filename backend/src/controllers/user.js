@@ -49,8 +49,15 @@ export const getLoggedUser = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
-  
-    return res.json(rows[0]);
+
+    const user = rows[0];
+
+    // LEFT JOIN sem ministérios gera [null] em vez de [] no JSON_ARRAYAGG
+    user.ministries = Array.isArray(user.ministries)
+      ? user.ministries.filter(Boolean)
+      : [];
+
+    return res.json(user);
   } catch (error) {
     console.error("ERRO AO BUSCAR USUÁRIO LOGADO:", error);
     return res.status(500).json({ error: "Erro ao buscar usuário" });
@@ -131,6 +138,11 @@ export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // membro só pode editar o próprio cadastro; admin edita qualquer um
+    if (req.user.role !== "admin" && req.user.sub !== id) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     const {
       name,
       email,
@@ -148,6 +160,7 @@ export const updateUser = async (req, res) => {
       city,
       state,
       zip_code,
+      selfie_url,
       ministries,
     } = req.body;
 
@@ -197,7 +210,8 @@ export const updateUser = async (req, res) => {
         neighborhood = ?,
         city = ?,
         state = ?,
-        zip_code = ?
+        zip_code = ?,
+        selfie_url = COALESCE(?, selfie_url)
       WHERE id = ?
       `,
       [
@@ -217,31 +231,35 @@ export const updateUser = async (req, res) => {
         city,
         state,
         zip_code,
+        selfie_url || null,
         id,
       ]
     );
 
-    // ministérios
-    await db.query(
-      "DELETE FROM user_ministries WHERE user_id = ?",
-      [id]
-    );
-
-    if (Array.isArray(ministries) && ministries.length > 0) {
-      const values = ministries.map((ministry) => [
-        randomUUID(),
-        id,
-        ministry.id,
-      ]);
-
+    // ministérios: só mexe se o campo foi enviado explicitamente
+    // (evita apagar os vínculos quando quem chama não gerencia ministérios, ex: membro editando o próprio perfil)
+    if (ministries !== undefined) {
       await db.query(
-        `
-        INSERT INTO user_ministries
-        (id, user_id, ministry_id)
-        VALUES ?
-        `,
-        [values]
+        "DELETE FROM user_ministries WHERE user_id = ?",
+        [id]
       );
+
+      if (Array.isArray(ministries) && ministries.length > 0) {
+        const values = ministries.map((ministry) => [
+          randomUUID(),
+          id,
+          ministry.id,
+        ]);
+
+        await db.query(
+          `
+          INSERT INTO user_ministries
+          (id, user_id, ministry_id)
+          VALUES ?
+          `,
+          [values]
+        );
+      }
     }
 
     return res.json({

@@ -4,7 +4,9 @@ import { adminOnly } from "../middleware/adminOnly.js";
 import {
   listPending,
   approveUser,
-  rejectUser, getUsersStats
+  rejectUser, getUsersStats,
+  deactivateUser,
+  activateUser
 } from "../controllers/admin.controller.js";
 
 const router = Router();
@@ -23,6 +25,20 @@ router.put(
   auth,
   adminOnly,
   rejectUser
+);
+
+router.put(
+  "/users/:id/deactivate",
+  auth,
+  adminOnly,
+  deactivateUser
+);
+
+router.put(
+  "/users/:id/activate",
+  auth,
+  adminOnly,
+  activateUser
 );
 
 router.post("/logout", auth, (req, res) => {

@@ -8,6 +8,7 @@ import ministriesRoutes from "./routes/ministries.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import userRoutes from "./routes/user_router.js";
+import eventsRoutes from "./routes/events.routes.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use("/auth", authRoutes);
 app.use("/ministries", ministriesRoutes);
 app.use("/upload", uploadRoutes);
 app.use("/admin", adminRoutes);
+app.use("/events", eventsRoutes);
 
 app.use("", userRoutes);
 
